@@ -1,0 +1,46 @@
+hystrix:
+  command:
+    fallbackcmd:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 4000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hystrix.stream
+spring:
+  application:
+    name: GATEWAY-SERVICE
+  cloud:
+    circuitbreaker:
+      hystrix:
+        enabled: true
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/order/**
+        - id: payment-service
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/payment/**
+
+
+
+
+
+server:
+  port: 9003
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    hostname: localhost
+
