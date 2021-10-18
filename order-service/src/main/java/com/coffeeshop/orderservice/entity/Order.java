@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "ORDER_TBL")
@@ -18,9 +19,9 @@ public class Order {
     private int id;
     private int ownerId;
     private int customerId;
-    private String name;
+    private String item;
     private int counter;
     private int queue;
     private int qnty;
-    private double price;
+    private BigDecimal price;
 }

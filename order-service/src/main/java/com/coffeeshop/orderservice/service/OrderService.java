@@ -1,12 +1,16 @@
 package com.coffeeshop.orderservice.service;
 
+import com.coffeeshop.orderservice.common.OrderServiceResponse;
 import com.coffeeshop.orderservice.common.Payment;
 import com.coffeeshop.orderservice.common.TransactionRequest;
 import com.coffeeshop.orderservice.common.TransactionResponse;
 import com.coffeeshop.orderservice.entity.Order;
 import com.coffeeshop.orderservice.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.apache.catalina.filters.ExpiresFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.RestTemplate;
@@ -23,33 +27,44 @@ public class OrderService {
     @Autowired
     private RestTemplate restTemplate;
 
-    public TransactionResponse saveOrder(TransactionRequest request){
+    public ResponseEntity<TransactionResponse> saveOrder(TransactionRequest request){
+        TransactionResponse transactionResponse = new TransactionResponse();
+        OrderServiceResponse orderServiceResponse = new OrderServiceResponse();
+        orderServiceResponse = submitOrder(request);
+        transactionResponse.setData(orderServiceResponse);
+        return ResponseEntity.status(HttpStatus.OK).body(transactionResponse);
+    }
+    public OrderServiceResponse submitOrder(TransactionRequest request){
 
         Order order =  request.getOrder();
         Payment payment = request.getPayment();
-        payment.setOrderId(order.getId());
-        payment.setAmount(order.getPrice());
-
-       //Payment paymentResponse = restTemplate.postForObject("http://PAYMENT-SERVICE/payment/doPayment",payment, Payment.class);
+        if(payment != null) {
+            payment.setOrderId(order.getId());
+            payment.setAmount(order.getPrice());
+        }
+        //Payment paymentResponse = restTemplate.postForObject("http://PAYMENT-SERVICE/payment/doPayment",payment, Payment.class);
         Payment paymentResponse =paymentcall(payment);
-        TransactionResponse transactionResponse = new TransactionResponse();
-        transactionResponse.setOrder(order);
-        transactionResponse.setAmount(paymentResponse.getAmount());
-        transactionResponse.setTansactionId(payment.getTransactionId());
-        transactionResponse.setMessage(paymentResponse.getPaymentStatus());
+        OrderServiceResponse orderServiceResponse = new OrderServiceResponse();
+        orderServiceResponse.setOrder(order);
+        orderServiceResponse.setAmount(paymentResponse.getAmount());
+        orderServiceResponse.setTansactionId(payment.getTransactionId());
+        orderServiceResponse.setMessage(paymentResponse.getPaymentStatus() +" "+ paymentResponse.getMessage());
         orderRepository.save(order);
-        return  transactionResponse;
+        return orderServiceResponse;
+        //transactionResponse;
     }
 
-    @CircuitBreaker(name="payment", fallbackMethod = "paymentFallBack")
+    @CircuitBreaker(name="PAYMENT-SERVICE", fallbackMethod = "paymentFallBack")
     public Payment paymentcall (Payment payment){
-        return restTemplate.postForObject("http://PAYMENT-SERVICE/payment/doPayment",payment, Payment.class);
+        //ResponseEntity.status(ExpiresFilter.XHttpServletResponse.)
+        if(restTemplate == null)
+            restTemplate =new RestTemplate();
+        return restTemplate.postForObject("http://PAYMENT-SERVICE/payments/doPayment",payment, Payment.class);
     }
 
     public Payment paymentFallback (Exception ex){
         Payment payment = new Payment();
         payment.setPaymentStatus("Failed");
-        payment.setPaymentId(new Random().nextInt());
         payment.setPaymentStatus(UUID.randomUUID().toString());
         return payment;
     }

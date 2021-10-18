@@ -6,15 +6,17 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
-    private int paymentId;
     private String paymentStatus;
     private String transactionId;
     private int orderId;
-    private double amount;
+    private BigDecimal amount;
+    private String promoCode;
+    private String message;
 }
 
