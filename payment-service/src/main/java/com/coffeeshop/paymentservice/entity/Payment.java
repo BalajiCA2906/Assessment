@@ -9,6 +9,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name="PAYMENT_TBL")
@@ -16,11 +17,13 @@ import javax.persistence.Table;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
-    @Id
-    @GeneratedValue
-    private int paymentId;
+
     private String paymentStatus;
     private String transactionId;
+    @Id
     private int orderId;
-    private double amount;
+    private BigDecimal amount;
+    private String promoCode;
+    private String promoCodeMessage;
+    private String message;
 }
